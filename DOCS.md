@@ -11,7 +11,7 @@ The following parameters are used to configure the plugin:
 ```yaml
 pipeline:
   restore-cache:
-    image: drillster/drone-cache
+    image: drillster/drone-volume-cache
     restore: true
     mount:
       - ./node_modules
@@ -25,7 +25,7 @@ pipeline:
       - npm install
 
   rebuild-cache:
-    image: drillster/drone-cache
+    image: drillster/drone-volume-cache
     rebuild: true
     mount:
       - ./node_modules
