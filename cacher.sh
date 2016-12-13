@@ -10,14 +10,16 @@ if [ -n "$PLUGIN_REBUILD" ]; then
     # Create cache
     for source in "${SOURCES[@]}"; do
         echo "Rebuilding cache for $source..."
-        mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source" && rsync -aHAX "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source"
+        mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source" && \
+            rsync -aHAX --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source"
     done
 elif [ -n "$PLUGIN_RESTORE" ]; then
     # Restore from cache
     for source in "${SOURCES[@]}"; do
         if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source" ]; then
             echo "Restoring cache for $source..."
-            mkdir -p "$source" && rsync -aHAX "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source/" "$source"
+            mkdir -p "$source" && \
+                rsync -aHAX --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$source/" "$source"
         else
             echo "No cache for $source"
         fi
