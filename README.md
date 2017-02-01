@@ -21,6 +21,7 @@ docker run --rm \
   -e PLUGIN_MOUNT="./node_modules" \
   -e DRONE_REPO_OWNER="foo" \
   -e DRONE_REPO_NAME="bar" \
+  -e DRONE_JOB_NUMBER=0 \
   -v $(pwd):$(pwd) \
   -v /tmp/cache:/cache \
   -w $(pwd) \

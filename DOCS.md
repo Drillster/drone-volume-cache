@@ -35,3 +35,9 @@ pipeline:
 ```
 
 The example above illustrates a typical Node.js project Drone configuration. It caches the `./node_modules` directory to a mounted volume on the host system: `/tmp/cache`. This prevents `npm` from downloading and installing the dependencies for every build.
+
+## Clearing Cache
+Should you want to clear the cache for a project, you can do so by including `[CLEAR CACHE]` in the commit message. The entire cache folder for the project will be cleared before it is restored. The rebuilding of cache will proceed as normal.
+
+## Skipping Cache
+If you want to run a build without using cache, put `[NO CACHE]` in the commit message. Both the restoring and rebuilding of cache will be skipped. Your cache will remain intact.
