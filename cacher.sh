@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [ -z "$PLUGIN_MOUNT" ]; then
     echo "Specify folders to cache in the mount property! Plugin won't do anything!"
@@ -21,9 +22,14 @@ IFS=','; read -ra SOURCES <<< "$PLUGIN_MOUNT"
 if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
     # Create cache
     for source in "${SOURCES[@]}"; do
-        echo "Rebuilding cache for $source..."
-        mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" && \
-            rsync -aHAX --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+        if [ -d "$source" ]; then
+            echo "Rebuilding cache for $source..."
+            mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" && \
+                rsync -aHAX --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+        else
+            echo "$source does not exist, removing from cached folder..."
+            rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+        fi
     done
 elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     # Restore from cache
