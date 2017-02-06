@@ -9,7 +9,7 @@ fi
 if [[ $DRONE_COMMIT_MESSAGE == *"[CLEAR CACHE]"* && -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME" ]; then
         echo "Found [CLEAR CACHE] in commit message, clearing cache!"
-        rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME"
+        rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER"
     fi
 fi
 
