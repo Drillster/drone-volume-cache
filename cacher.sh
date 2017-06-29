@@ -8,8 +8,9 @@ fi
 
 if [[ $DRONE_COMMIT_MESSAGE == *"[CLEAR CACHE]"* && -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME" ]; then
-        echo "Found [CLEAR CACHE] in commit message, clearing cache!"
+        echo "Found [CLEAR CACHE] in commit message, clearing cache..."
         rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER"
+        exit 0
     fi
 fi
 
@@ -23,9 +24,12 @@ if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
     # Create cache
     for source in "${SOURCES[@]}"; do
         if [ -d "$source" ]; then
-            echo "Rebuilding cache for $source..."
+            echo "Rebuilding cache for folder $source..."
             mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" && \
                 rsync -aHA --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+        elif [ -f "$source" ]; then
+            echo "Rebuilding cache for file $source..."
+            rsync -aHA --delete "$source" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/"
         else
             echo "$source does not exist, removing from cached folder..."
             rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
@@ -35,9 +39,12 @@ elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     # Restore from cache
     for source in "${SOURCES[@]}"; do
         if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" ]; then
-            echo "Restoring cache for $source..."
+            echo "Restoring cache for folder $source..."
             mkdir -p "$source" && \
                 rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source/" "$source"
+        elif [ -f "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" ]; then
+            echo "Restoring cache for file $source..."
+            rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" "./"
         else
             echo "No cache for $source"
         fi
