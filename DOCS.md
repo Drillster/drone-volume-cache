@@ -5,7 +5,7 @@ Because it uses a mounted volume, it requires repositories using it to enable th
 The following parameters are used to configure the plugin:
 - **restore** - instruct plugin to restore cache, can be `true` or `false`
 - **rebuild** - instruct plugin to rebuild cache, can be `true` or `false`
-- **mount** - list of folders to cache
+- **mount** - list of folders or files to cache
 
 ## Examples
 ```yaml
