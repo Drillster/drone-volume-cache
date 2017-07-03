@@ -6,6 +6,7 @@ The following parameters are used to configure the plugin:
 - **restore** - instruct plugin to restore cache, can be `true` or `false`
 - **rebuild** - instruct plugin to rebuild cache, can be `true` or `false`
 - **mount** - list of folders or files to cache
+- **ttl** - maximum cache lifetime in days
 
 ## Examples
 ```yaml
@@ -35,6 +36,24 @@ pipeline:
 ```
 
 The example above illustrates a typical Node.js project Drone configuration. It caches the `./node_modules` directory to a mounted volume on the host system: `/tmp/cache`. This prevents `npm` from downloading and installing the dependencies for every build.
+
+## Using cache lifetime
+It is possible to limit the lifetime of cached files and folders.
+
+```yaml
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - ./node_modules
+    # Mount the cache volume, needs "Trusted"
+    volumes:
+      - /tmp/cache:/cache
+    ttl: 7
+```
+
+The example above shows a situation where cached items older than 7 days will not be restored (they will be removed instead). Only the restore step needs the `ttl` parameter.
 
 ## Clearing Cache
 Should you want to clear the cache for a project, you can do so by including `[CLEAR CACHE]` in the commit message. The entire cache folder for the project will be cleared before it is restored. The rebuilding of cache will proceed as normal.
