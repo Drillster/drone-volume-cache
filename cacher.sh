@@ -39,9 +39,11 @@ elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     # Remove files older than TTL
     if [[ -n "$PLUGIN_TTL" && "$PLUGIN_TTL" > "0" ]]; then
         if [[ $PLUGIN_TTL =~ ^[0-9]+$ ]]; then
-            echo "Removing files and (empty) folders older than $PLUGIN_TTL days..."
-            find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type f -ctime +$PLUGIN_TTL -delete
-            find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type d -ctime +$PLUGIN_TTL -empty -delete
+            if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" ]; then
+              echo "Removing files and (empty) folders older than $PLUGIN_TTL days..."
+              find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type f -ctime +$PLUGIN_TTL -delete
+              find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type d -ctime +$PLUGIN_TTL -empty -delete
+            fi
         else
             echo "Invalid value for ttl, please enter a positive integer. Plugin will ignore ttl."
         fi
