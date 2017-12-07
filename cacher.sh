@@ -29,7 +29,9 @@ if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
                 rsync -aHA --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
         elif [ -f "$source" ]; then
             echo "Rebuilding cache for file $source..."
-            rsync -aHA --delete "$source" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/"
+            source_dir=$(dirname $source)
+            mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source_dir" && \
+                rsync -aHA --delete "$source" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source_dir/"
         else
             echo "$source does not exist, removing from cached folder..."
             rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
@@ -56,7 +58,9 @@ elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
                 rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source/" "$source"
         elif [ -f "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" ]; then
             echo "Restoring cache for file $source..."
-            rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" "./"
+            source_dir=$(dirname $source)
+            mkdir -p "$source_dir" && \
+                rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" "$source_dir/"
         else
             echo "No cache for $source"
         fi
