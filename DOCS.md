@@ -7,6 +7,7 @@ The following parameters are used to configure the plugin:
 - **rebuild** - instruct plugin to rebuild cache, can be `true` or `false`
 - **mount** - list of folders or files to cache
 - **ttl** - maximum cache lifetime in days
+- **cache_key** - list of environment variables to use for constructing the cache path
 
 ## Examples
 ```yaml
@@ -54,6 +55,28 @@ pipeline:
 ```
 
 The example above shows a situation where cached items older than 7 days will not be restored (they will be removed instead). Only the restore step needs the `ttl` parameter.
+
+## Using the cache_key option
+By default, this plugin uses the repo owner, repo name, and job number to construct a cache key. Say the repository owner is `foo`, the repository name is `bar`, and the job number is `1`,
+the cache key (folder) the plugin will use for the build will be `foo/bar/1`.
+If this is not optimal for your specific situation, it is possible to modify the cache key. For example, let's say that your project differs quite a bit between different branches, you may want to include the branch somewhere in the cache key:
+
+```yaml
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - ./node_modules
+    # Mount the cache volume, needs "Trusted"
+    volumes:
+      - /tmp/cache:/cache
+    cache_key: [ DRONE_REPO_OWNER, DRONE_REPO_NAME, DRONE_BRANCH, DRONE_JOB_NUMBER ]
+```
+
+This would lead to the following cache key if a build is triggered for the master branch (and the rest of the situation is the same as the example illustrated above): `foo/bar/master/1`.
+
+In theory you could even use this to share cache between different projects, but extreme caution is advised doing so.
 
 ## Clearing Cache
 Should you want to clear the cache for a project, you can do so by including `[CLEAR CACHE]` in the commit message. The entire cache folder for the project will be cleared before it is restored. The rebuilding of cache will proceed as normal.

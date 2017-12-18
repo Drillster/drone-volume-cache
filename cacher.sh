@@ -19,32 +19,49 @@ if [[ $DRONE_COMMIT_MESSAGE == *"[NO CACHE]"* ]]; then
     exit 0
 fi
 
+CACHE_PATH="$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER"
+if [[ -n "$PLUGIN_CACHE_KEY" ]]; then
+    function join_by { local IFS="$1"; shift; echo "$*"; }
+    IFS=','; read -ra CACHE_PATH_VARS <<< "$PLUGIN_CACHE_KEY"
+    CACHE_PATH_VALUES=()
+    for env_var in "${CACHE_PATH_VARS[@]}"; do
+        env_var_value="${!env_var}"
+        
+        if [[ -z "$env_var_value" ]]; then
+            echo "Warning! Environment variable '${env_var}' does not contain a value, it will be ignored!"
+        else
+            CACHE_PATH_VALUES+=("${env_var_value}")
+        fi
+    done
+    CACHE_PATH=$(join_by / "${CACHE_PATH_VALUES[@]}")
+fi
+
 IFS=','; read -ra SOURCES <<< "$PLUGIN_MOUNT"
 if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
     # Create cache
     for source in "${SOURCES[@]}"; do
         if [ -d "$source" ]; then
             echo "Rebuilding cache for folder $source..."
-            mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" && \
-                rsync -aHA --delete "$source/" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+            mkdir -p "/cache/$CACHE_PATH/$source" && \
+                rsync -aHA --delete "$source/" "/cache/$CACHE_PATH/$source"
         elif [ -f "$source" ]; then
             echo "Rebuilding cache for file $source..."
             source_dir=$(dirname $source)
-            mkdir -p "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source_dir" && \
-                rsync -aHA --delete "$source" "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source_dir/"
+            mkdir -p "/cache/$CACHE_PATH/$source_dir" && \
+                rsync -aHA --delete "$source" "/cache/$CACHE_PATH/$source_dir/"
         else
             echo "$source does not exist, removing from cached folder..."
-            rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source"
+            rm -rf "/cache/$CACHE_PATH/$source"
         fi
     done
 elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     # Remove files older than TTL
     if [[ -n "$PLUGIN_TTL" && "$PLUGIN_TTL" > "0" ]]; then
         if [[ $PLUGIN_TTL =~ ^[0-9]+$ ]]; then
-            if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" ]; then
+            if [ -d "/cache/$CACHE_PATH" ]; then
               echo "Removing files and (empty) folders older than $PLUGIN_TTL days..."
-              find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type f -ctime +$PLUGIN_TTL -delete
-              find "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER" -type d -ctime +$PLUGIN_TTL -empty -delete
+              find "/cache/$CACHE_PATH" -type f -ctime +$PLUGIN_TTL -delete
+              find "/cache/$CACHE_PATH" -type d -ctime +$PLUGIN_TTL -empty -delete
             fi
         else
             echo "Invalid value for ttl, please enter a positive integer. Plugin will ignore ttl."
@@ -52,15 +69,15 @@ elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
     fi
     # Restore from cache
     for source in "${SOURCES[@]}"; do
-        if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" ]; then
+        if [ -d "/cache/$CACHE_PATH/$source" ]; then
             echo "Restoring cache for folder $source..."
             mkdir -p "$source" && \
-                rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source/" "$source"
-        elif [ -f "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" ]; then
+                rsync -aHA --delete "/cache/$CACHE_PATH/$source/" "$source"
+        elif [ -f "/cache/$CACHE_PATH/$source" ]; then
             echo "Restoring cache for file $source..."
             source_dir=$(dirname $source)
             mkdir -p "$source_dir" && \
-                rsync -aHA --delete "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER/$source" "$source_dir/"
+                rsync -aHA --delete "/cache/$CACHE_PATH/$source" "$source_dir/"
         else
             echo "No cache for $source"
         fi
