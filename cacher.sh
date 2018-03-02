@@ -6,14 +6,6 @@ if [ -z "$PLUGIN_MOUNT" ]; then
     exit 0
 fi
 
-if [[ $DRONE_COMMIT_MESSAGE == *"[CLEAR CACHE]"* && -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
-    if [ -d "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME" ]; then
-        echo "Found [CLEAR CACHE] in commit message, clearing cache..."
-        rm -rf "/cache/$DRONE_REPO_OWNER/$DRONE_REPO_NAME/$DRONE_JOB_NUMBER"
-        exit 0
-    fi
-fi
-
 if [[ $DRONE_COMMIT_MESSAGE == *"[NO CACHE]"* ]]; then
     echo "Found [NO CACHE] in commit message, skipping cache restore and rebuild!"
     exit 0
@@ -26,7 +18,7 @@ if [[ -n "$PLUGIN_CACHE_KEY" ]]; then
     CACHE_PATH_VALUES=()
     for env_var in "${CACHE_PATH_VARS[@]}"; do
         env_var_value="${!env_var}"
-        
+
         if [[ -z "$env_var_value" ]]; then
             echo "Warning! Environment variable '${env_var}' does not contain a value, it will be ignored!"
         else
@@ -55,6 +47,14 @@ if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
         fi
     done
 elif [[ -n "$PLUGIN_RESTORE" && "$PLUGIN_RESTORE" == "true" ]]; then
+    # Clear existing cache if asked in commit message
+    if [[ $DRONE_COMMIT_MESSAGE == *"[CLEAR CACHE]"* ]]; then
+        if [ -d "/cache/$CACHE_PATH" ]; then
+            echo "Found [CLEAR CACHE] in commit message, clearing cache..."
+            rm -rf "/cache/$CACHE_PATH"
+            exit 0
+        fi
+    fi
     # Remove files older than TTL
     if [[ -n "$PLUGIN_TTL" && "$PLUGIN_TTL" > "0" ]]; then
         if [[ $PLUGIN_TTL =~ ^[0-9]+$ ]]; then
