@@ -28,6 +28,17 @@ if [[ -n "$PLUGIN_CACHE_KEY" ]]; then
     CACHE_PATH=$(join_by / "${CACHE_PATH_VALUES[@]}")
 fi
 
+if [[ -e ".cache_key" ]]; then
+    echo "Found a .cache_key file to be used as the cache path!"
+    CACHE_PATH=$(cut -c-$(getconf NAME_MAX /) .cache_key | head -n 1)
+
+    if [[ -n "$PLUGIN_CACHE_KEY_DISABLE_SANITIZE" && "$PLUGIN_CACHE_KEY_DISABLE_SANITIZE" == "true" ]]; then
+        echo "Warning! .cache_key will be used as-is. Sanitization is your responsibility to make it filename friendly!"
+    else
+        CACHE_PATH=$(echo "$CACHE_PATH" | md5sum | cut -d ' ' -f 1)
+    fi
+fi
+
 IFS=','; read -ra SOURCES <<< "$PLUGIN_MOUNT"
 if [[ -n "$PLUGIN_REBUILD" && "$PLUGIN_REBUILD" == "true" ]]; then
     # Create cache

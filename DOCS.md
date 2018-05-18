@@ -78,6 +78,28 @@ This would lead to the following cache key if a build is triggered for the maste
 
 In theory you could even use this to share cache between different projects, but extreme caution is advised doing so.
 
+## Using the `.cache_key` file
+Instead of using a `cache_key` option in your Drone yaml file, you may generate a cache key and write it to the `.cache_key` file in the root of your repo. If a `.cache_key` file is present, the first [NAME_MAX](https://www.gnu.org/software/libc/manual/html_node/Limits-for-Files.html) characters of the first line of this file is read and (by default) its MD5 is used as the actual key for sanitization purposes. You may disable MD5'ing by setting `cache_key_disable_sanitize: true`.
+
+This feature allows you to generate the cache key dynamically (e.g. by calculating the checksum of your `package.json`). Note that if a `.cache_key` file is present, it overrides your settings of `cache_key`.
+
+```yaml
+pipeline:
+  build:
+    image: ubuntu
+    commands:
+      - [...]
+      - echo -n "my custom cache key" > .cache_key
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - ./node_modules
+    # Mount the cache volume, needs "Trusted"
+    volumes:
+      - /tmp/cache:/cache
+```
+
 ## Clearing Cache
 Should you want to clear the cache for a project, you can do so by including `[CLEAR CACHE]` in the commit message. The entire cache folder for the project will be cleared before it is restored. The rebuilding of cache will proceed as normal.
 
